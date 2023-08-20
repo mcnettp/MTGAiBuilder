@@ -19,7 +19,7 @@ def SuccessFunction(Deck: List[tuple], pricePoint : float) -> float:
         priceOfDeck += card[2]
 
     if priceOfDeck > pricePoint:
-        return 1.0
+        return NumberOfCardsInDeck
     
     return score
 
@@ -31,7 +31,7 @@ def FitnessFunction(Deck: List[tuple], pricePoint : float):
     if deckScore == 0:
         return LimitForSolution
     else:
-        return abs(100 / deckScore)
+        return abs(NumberOfCardsInDeck / deckScore)
 
 def main():
 
