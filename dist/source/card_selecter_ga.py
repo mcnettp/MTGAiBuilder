@@ -4,6 +4,7 @@ from typing import List
 NumberOfCardsInDeck : int = 100
 NumberOfLands : int = 35
 NumberOfGenerations : int = 10000
+NumberOfGenerationsForScoreChange = 10
 AllCards : List[tuple] = []
 LimitForSolution : float = 100.0
 ReasonablePrice : float = 20.0
@@ -15,7 +16,7 @@ TestCardSet : List[tuple] = [('1', 0.5, 4), ('2', 0.9, 10), ('3', 0.1, 1), ('4',
 if IS_TEST_SET:
     # Decrease the Number of Cards needed for the Deck
     NumberOfLands = 96
-    # At Resasonable Price should give you '1', '2', '6', '7'
+    # At Resasonable Price should give you '9', '2', '6', '7'
 
 # Inputs: List[tuple (name, value, cost)]
 # Outputs: Score (0 to 100 minus the Number of Lands) or 1 for a bad deck
@@ -28,7 +29,7 @@ def SuccessFunction(Deck: List[tuple], pricePoint : float) -> float:
         priceOfDeck += card[2]
 
     if priceOfDeck > pricePoint:
-        return NumberOfCardsInDeck
+        return NumberOfCardsInDeck - NumberOfLands
     
     return score
 
@@ -40,7 +41,7 @@ def FitnessFunction(Deck: List[tuple], pricePoint : float):
     if deckScore == 0:
         return LimitForSolution
     else:
-        return abs(NumberOfCardsInDeck / deckScore)
+        return abs((NumberOfCardsInDeck - NumberOfLands) / deckScore)
 
 def main():
 
@@ -49,7 +50,8 @@ def main():
     try:
         priceLimit = float(input("Input a price for the deck: "))
     except ValueError:
-        return
+        print(f"Invalid Input using the ReasonablePrice: {ReasonablePrice}")
+        priceLimit = ReasonablePrice
 
     # Safety Checks:
         # Check if it is a positive number, a reasonable price, etc.
@@ -73,6 +75,8 @@ def main():
 
     print (f"AllCards: {AllCards}")
     print (f"Number of Lands: {NumberOfLands}")
+    
+    previousScores = []
 
     # Generate Initial Solutions
     for _ in range(1000):
@@ -111,9 +115,19 @@ def main():
 
         print(f"=== Gen {i} best solutions === ")
         print(rankedDecks[0])
+        previousScores.append(rankedDecks[0][0])
+
+        # Check if the scores are not improving since we might have found our best result already
+        sameScoreFound : bool = False
+        if len(previousScores) > NumberOfGenerationsForScoreChange:
+            # Check recent index and then the indices back NumberOfGenerationsForScoreChange amount
+            curScore : float = previousScores[len(previousScores) - 1]
+            backScore : float = previousScores[len(previousScores) - 1 - NumberOfGenerationsForScoreChange]
+            if abs(backScore - curScore) <= 0.001: # Could use math.isclose()
+                sameScoreFound = True
 
         # Break if we get a good result early
-        if rankedDecks[0][0] >= LimitForSolution:
+        if rankedDecks[0][0] >= LimitForSolution or sameScoreFound:
             break
 
         bestDecks = rankedDecks[:(int)(NumberOfGenerations / 10)]
